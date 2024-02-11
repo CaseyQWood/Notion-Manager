@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from openai import OpenAI
 from dotenv import load_dotenv
+from conversation import Conversation
 from models.chat_models import Message
 
 load_dotenv()
@@ -25,15 +26,28 @@ app.add_middleware(
 
 tools = []
 
+SYSTEM_PROMPT = "You are a helpful assistant that is trying to help a user"
+
+convo = Conversation(SYSTEM_PROMPT)
+
 
 @app.get("/chat-completion")
 async def root():
 
+    convo.add_user_message(
+        Message(
+            role="user",
+            content="I need help with my taxes",
+        )
+    )
+
+    print("HERE", convo.get_messages())
+
     response: Message = client.chat.completions.create(
         model="gpt-4-turbo-preview",
         messages=convo.get_messages(),
-        tools=tools,
-        tool_choice="auto",
+        # tools=tools,
+        # tool_choice="auto",
     )
 
-    return {"greeting": "Hello, World!", "message": "Welcome to FastAPI!"}
+    return {"response": response}
