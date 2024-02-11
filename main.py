@@ -31,6 +31,11 @@ SYSTEM_PROMPT = "You are a helpful assistant that is trying to help a user"
 convo = Conversation(SYSTEM_PROMPT)
 
 
+@app.get("/get_messages")
+async def get_messages():
+    return convo.get_messages()
+
+
 @app.post("/chat-completion")
 async def root(user_message: Message):
 
