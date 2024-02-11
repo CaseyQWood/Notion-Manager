@@ -31,17 +31,10 @@ SYSTEM_PROMPT = "You are a helpful assistant that is trying to help a user"
 convo = Conversation(SYSTEM_PROMPT)
 
 
-@app.get("/chat-completion")
-async def root():
+@app.post("/chat-completion")
+async def root(user_message: Message):
 
-    convo.add_user_message(
-        Message(
-            role="user",
-            content="I need help with my taxes",
-        )
-    )
-
-    print("HERE", convo.get_messages())
+    convo.add_user_message(user_message)
 
     response: Message = client.chat.completions.create(
         model="gpt-4-turbo-preview",
@@ -50,4 +43,6 @@ async def root():
         # tool_choice="auto",
     )
 
-    return {"response": response}
+    convo.add_assistant_message(response.choices[0].message)
+
+    return {"response": response.choices[0].message}
