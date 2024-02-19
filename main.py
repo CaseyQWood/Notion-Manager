@@ -1,11 +1,20 @@
 import os
+import time
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from icecream import ic
 from openai import OpenAI
 from dotenv import load_dotenv
-from conversation import Conversation
-from models.chat_models import Message
+from pydantic import BaseModel
+
+# from models.chat_models import UserMessage
+
+
+class UserMessage(BaseModel):
+    """User message model."""
+
+    content: str
+
 
 load_dotenv()
 
@@ -24,30 +33,51 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
-tools = []
 
-SYSTEM_PROMPT = "You are a helpful assistant that is trying to help a user"
+def wait_on_run(run, thread):
+    """Wait for the run to complete."""
+    while run.status == "queued" or run.status == "in_progress":
+        run = client.beta.threads.runs.retrieve(
+            thread_id=thread.id,
+            run_id=run.id,
+        )
+        time.sleep(0.5)
+    return run
 
-convo = Conversation(SYSTEM_PROMPT)
+
+# @app.get("/get_messages")
+# async def get_messages():
+#     """Get the messages in the conversation."""
+
+#     return convo.get_messages()
 
 
-@app.get("/get_messages")
-async def get_messages():
-    return convo.get_messages()
+@app.post("/assistants")
+async def add_message(user_message: UserMessage):
+    """Adds message to thread and runs assistant."""
 
+    ic(user_message)
 
-@app.post("/chat-completion")
-async def root(user_message: Message):
+    # thread = client.beta.threads.create()
 
-    convo.add_user_message(user_message)
+    my_thread = client.beta.threads.retrieve("thread_imcQEbMQjglqdarbtfmY3teq")
 
-    response: Message = client.chat.completions.create(
-        model="gpt-4-turbo-preview",
-        messages=convo.get_messages(),
-        # tools=tools,
-        # tool_choice="auto",
+    client.beta.threads.messages.create(
+        thread_id=my_thread.id,
+        role="user",
+        content=user_message.content,
     )
 
-    convo.add_assistant_message(response.choices[0].message)
+    run = client.beta.threads.runs.create(
+        thread_id=my_thread.id,
+        assistant_id="asst_kcp9EnAFTB7BvkGmfJqxWdEH",
+        instructions="Please address the user as Jane Doe. The user has a premium account.",
+    )
 
-    return {"response": response.choices[0].message}
+    run = client.beta.threads.runs.retrieve(thread_id=my_thread.id, run_id=run.id)
+
+    wait_on_run(run, my_thread)
+
+    messages = client.beta.threads.messages.list(thread_id=my_thread.id)
+
+    return messages.data
