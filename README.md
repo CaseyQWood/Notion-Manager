@@ -12,6 +12,7 @@ tags:
 This example starts up a [FastAPI](https://fastapi.tiangolo.com/) server.
 
 [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/-NvLj4?referralCode=CRJ8FE)
+
 ## ✨ Features
 
 - FastAPI
@@ -21,6 +22,7 @@ This example starts up a [FastAPI](https://fastapi.tiangolo.com/) server.
 ## 💁‍♀️ How to use
 
 - Clone locally and install packages with pip using `pip install -r requirements.txt`
+- Start Virtual Env `source myvenv/bin/activate`
 - Run locally using `hypercorn main:app --reload`
 
 ## 📝 Notes
